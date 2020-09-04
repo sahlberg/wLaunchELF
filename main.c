@@ -29,8 +29,6 @@ extern u8 poweroff_irx[];
 extern int size_poweroff_irx;
 extern u8 loader_elf;
 extern int size_loader_elf;
-extern u8 ps2netfs_irx[];
-extern int size_ps2netfs_irx;
 extern u8 iopmod_irx[];
 extern int size_iopmod_irx;
 extern u8 usbd_irx[];
@@ -116,7 +114,6 @@ static u8 have_ps2ip = 0;
 static u8 have_ps2atad = 0;
 static u8 have_ps2hdd = 0;
 static u8 have_ps2fs = 0;
-static u8 have_ps2netfs = 0;
 static u8 have_smbman = 0;
 static u8 have_vmc_fs = 0;
 //State of whether DEV9 was successfully loaded or not.
@@ -194,7 +191,6 @@ static void load_ps2dev9(void);
 static void load_ps2ip(void);
 static void load_ps2atad(void);
 static void ShowDebugInfo(void);
-static void load_ps2netfs(void);
 static void loadBasicModules(void);
 static void loadCdModules(void);
 static int loadExternalFile(char *argPath, void **fileBaseP, int *fileSizeP);
@@ -792,19 +788,6 @@ void load_vmc_fs(void)
 //------------------------------
 //endfunc load_vmc_fs
 //---------------------------------------------------------------------------
-static void load_ps2netfs(void)
-{
-	int ret;
-
-	load_ps2ip();
-	if (!have_ps2netfs) {
-		SifExecModuleBuffer(ps2netfs_irx, size_ps2netfs_irx, 0, NULL, &ret);
-		have_ps2netfs = 1;
-	}
-}
-//------------------------------
-//endfunc load_ps2netfs
-//---------------------------------------------------------------------------
 static void loadBasicModules(void)
 {
 	int ret;
@@ -1130,9 +1113,6 @@ static void loadNetModules(void)
 		drawMsg(LNG(Loading_NetFS_and_FTP_Server_Modules));
 
 		getIpConfig();  //RA NB: I always get that info, early in init
-		//             //But sometimes it is useful to do it again (HDD)
-		// Also, my module checking makes some other tests redundant
-		load_ps2netfs();  // loads ps2netfs from internal buffer
 		have_NetModules = 1;
 	}
 	strcpy(mainMsg, netConfig);
