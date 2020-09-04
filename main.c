@@ -9,6 +9,8 @@ extern u8 filexio_irx[];
 extern int size_filexio_irx;
 extern u8 DEV9_irx[];
 extern int size_DEV9_irx;
+extern u8 NETMAN_irx[];
+extern int size_NETMAN_irx;
 extern u8 ps2ip_irx[];
 extern int size_ps2ip_irx;
 extern u8 SMAP_irx[];
