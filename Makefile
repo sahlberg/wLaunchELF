@@ -2,7 +2,7 @@
 
 EE_BIN = BOOT-UNC.ELF
 EE_BIN_PKD = BOOT.ELF
-EE_OBJS = main.o pad.o config.o elf.o draw.o loader_elf.o filer.o \
+EE_OBJS = main.o smb2.o pad.o config.o elf.o draw.o loader_elf.o filer.o \
 	poweroff_irx.o iomanx_irx.o filexio_irx.o ps2atad_irx.o DEV9_irx.o NETMAN_irx.o \
 	SMAP_irx.o ps2hdd_irx.o ps2fs_irx.o usbd_irx.o usbhdfsd_irx.o mcman_irx.o mcserv_irx.o\
 	cdfs_irx.o vmc_fs_irx.o ps2kbd_irx.o\
@@ -11,7 +11,8 @@ EE_OBJS = main.o pad.o config.o elf.o draw.o loader_elf.o filer.o \
 EE_INCS := -I$(PS2DEV)/gsKit/include -I$(PS2SDK)/ports/include
 
 EE_LDFLAGS := -L$(PS2DEV)/gsKit/lib -L$(PS2SDK)/ports/lib -s
-EE_LIBS = -lgskit -ldmakit -ljpeg -lpad -lmc -lhdd -lkbd -lm \
+EE_LIBS = -lsmb2 -lps2ip -lnetman -ldebug \
+	-lgskit -ldmakit -ljpeg -lpad -lmc -lhdd -lkbd -lm \
 	-lcdvd -lfileXio -lpatches -lpoweroff -ldebug -lsior
 EE_CFLAGS := -mno-gpopt -G0
 

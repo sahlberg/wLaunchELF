@@ -2,6 +2,7 @@
 //File name:   main.c
 //---------------------------------------------------------------------------
 #include "launchelf.h"
+#include "smb2.h"
 
 extern u8 iomanx_irx[];
 extern int size_iomanx_irx;
@@ -272,7 +273,7 @@ static void Show_About_uLE(void)
 		//Display section
 		if (event || post_event) {  //NB: We need to update two frame buffers per event
 			clrScr(setting->color[COLOR_BACKGR]);
-			sprintf(TextRow, "About wLaunchELF %s  %s", ULE_VERSION, ULE_VERDATE);
+			sprintf(TextRow, "About smb2LaunchELF %s  %s", ULE_VERSION, ULE_VERDATE);
 			PrintPos(03, hpos, TextRow);
 			sprintf(TextRow, "                         commit: %s", GIT_HASH);
 			PrintPos(04, hpos, TextRow);
@@ -651,12 +652,12 @@ static void load_ps2dev9(void)
 //---------------------------------------------------------------------------
 static void load_ps2smap(void)
 {
-	int ret;
-
 	load_ps2dev9();
 	if (!have_ps2smap) {
+		SifExecModuleBuffer(NETMAN_irx, size_NETMAN_irx,
+				    0, NULL, NULL);
 		SifExecModuleBuffer(SMAP_irx, size_SMAP_irx,
-		                    if_conf_len, &if_conf[0], &ret);
+				    0, NULL, NULL);
 		have_ps2smap = 1;
 	}
 }
@@ -2053,6 +2054,12 @@ int main(int argc, char *argv[])
 	InitializeBootExecPath();
 
 	CNF_error = loadConfig(mainMsg, strcpy(CNF, "LAUNCHELF.CNF"));
+
+       // SMB2
+       getIpConfig();
+       load_ps2smap();
+       init_smb2(ip, netmask, gw);
+       sleep(5);
 
 	//Last chance to look at bootup screen, so allow braking here
 	/*

@@ -450,4 +450,13 @@ extern u64 USB_mass_scan_time;
 extern int USB_mass_scanned;
 extern int USB_mass_loaded;  //0==none, 1==internal, 2==external
 
+#define MC_ATTR_norm_folder 0x8427  //Normal folder on PS2 MC
+#define MC_ATTR_prot_folder 0x842F  //Protected folder on PS2 MC
+#define MC_ATTR_PS1_folder 0x9027   //PS1 save folder on PS2 MC
+#define MC_ATTR_norm_file 0x8497    //file (PS2/PS1) on PS2 MC
+#define MC_ATTR_PS1_file 0x9417     //PS1 save file on PS1 MC
+extern int size_valid;
+extern int time_valid;
+void clear_mcTable(sceMcTblGetDir *mcT);
+
 #endif

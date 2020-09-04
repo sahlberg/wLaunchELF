@@ -2,6 +2,7 @@
 //File name:   filer.c
 //--------------------------------------------------------------
 #include "launchelf.h"
+#include "smb2.h"
 
 typedef struct
 {
@@ -15,12 +16,6 @@ typedef struct
 } PS2TIME __attribute__((aligned(2)));
 
 #define MC_SFI 0xFEED  //flag value used for mcSetFileInfo at MC file restoration
-
-#define MC_ATTR_norm_folder 0x8427  //Normal folder on PS2 MC
-#define MC_ATTR_prot_folder 0x842F  //Protected folder on PS2 MC
-#define MC_ATTR_PS1_folder 0x9027   //PS1 save folder on PS2 MC
-#define MC_ATTR_norm_file 0x8497    //file (PS2/PS1) on PS2 MC
-#define MC_ATTR_PS1_file 0x9417     //PS1 save file on PS1 MC
 
 #define IOCTL_RENAME 0xFEEDC0DE  //Ioctl request code for Rename function
 
@@ -1100,6 +1095,8 @@ int getDir(const char *path, FILEINFO *info)
 		n = readMASS(path, info, max);
 	else if (!strncmp(path, "cdfs", 4))
 		n = readCD(path, info, max);
+	else if (!strncmp(path, "smb2", 4))
+		n = readSMB2(path, info, max);
 	else if (!strncmp(path, "vmc", 3))
 		n = readVMC(path, info, max);
 	else
@@ -2802,6 +2799,10 @@ int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
 					files[nfiles++].stats.AttrFile = sceMcFileAttrSubdir;
 				}
 			}
+		}
+		if (smb2_shares) {
+			strcpy(files[nfiles].name, "smb2:");
+			files[nfiles++].stats.AttrFile = sceMcFileAttrSubdir;
 		}
 		if (!cnfmode || (cnfmode == JPG_CNF)) {
 			//This condition blocks selecting any CONFIG items on PC
