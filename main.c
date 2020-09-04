@@ -11,8 +11,8 @@ extern u8 iomanx_irx[];
 extern int size_iomanx_irx;
 extern u8 filexio_irx[];
 extern int size_filexio_irx;
-extern u8 ps2dev9_irx[];
-extern int size_ps2dev9_irx;
+extern u8 DEV9_irx[];
+extern int size_DEV9_irx;
 extern u8 ps2ip_irx[];
 extern int size_ps2ip_irx;
 extern u8 ps2smap_irx[];
@@ -664,7 +664,7 @@ static void load_ps2dev9(void)
 	int ret, rcode;
 
 	if (!have_ps2dev9) {
-		ret = SifExecModuleBuffer(ps2dev9_irx, size_ps2dev9_irx, 0, NULL, &rcode);
+		ret = SifExecModuleBuffer(DEV9_irx, size_DEV9_irx, 0, NULL, &rcode);
 		ps2dev9_loaded = (ret >= 0 && rcode == 0);  //DEV9.IRX must have successfully loaded and returned RESIDENT END.
 		have_ps2dev9 = 1;
 	}
