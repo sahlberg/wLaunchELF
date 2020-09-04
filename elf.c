@@ -79,9 +79,6 @@ int checkELFheader(char *path)
 		pathSep = strchr(path, '/');
 		if (pathSep && (pathSep - path < 7) && pathSep[-1] == ':')
 			strcpy(fullpath + (pathSep - path), pathSep + 1);
-	} else if (!strncmp(fullpath, "host:", 5)) {
-		if (path[5] == '/')
-			strcpy(fullpath + 5, path + 6);
 	} else {
 		return 0;  //return 0 for unrecognized device
 	}

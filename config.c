@@ -19,7 +19,6 @@ enum {
 	DEF_MENU = TRUE,
 	DEF_NUMCNF = 1,
 	DEF_SWAPKEYS = FALSE,
-	DEF_HOSTWRITE = FALSE,
 	DEF_BRIGHT = 50,
 	DEF_POPUP_OPAQUE = FALSE,
 	DEF_INIT_DELAY = 0,
@@ -474,7 +473,6 @@ void saveConfig(char *mainMsg, char *CNF)
 	        "Menu_Pages = %d\r\n"
 	        "GUI_Swap_Keys = %d\r\n"
 	        "USBD_FILE = %s\r\n"
-	        "NET_HOSTwrite = %d\r\n"
 	        "Menu_Title = %s\r\n"
 	        "Init_Delay = %d\r\n"
 	        "USBKBD_USED = %d\r\n"
@@ -499,7 +497,6 @@ void saveConfig(char *mainMsg, char *CNF)
 	        setting->numCNF,           //Menu_Pages
 	        setting->swapKeys,         //GUI_Swap_Keys
 	        setting->usbd_file,        //USBD_FILE
-	        setting->HOSTwrite,        //NET_HOST_write
 	        setting->Menu_Title,       //Menu_Title
 	        setting->Init_Delay,       //Init_Delay
 	        setting->usbkbd_used,      //USBKBD_USED
@@ -669,7 +666,6 @@ void initConfig(void)
 	setting->Show_Menu = DEF_MENU;
 	setting->numCNF = DEF_NUMCNF;
 	setting->swapKeys = DEF_SWAPKEYS;
-	setting->HOSTwrite = DEF_HOSTWRITE;
 	setting->Brightness = DEF_BRIGHT;
 	setting->TV_mode = TV_mode_AUTO;
 	setting->Popup_Opaque = DEF_POPUP_OPAQUE;
@@ -828,8 +824,6 @@ int loadConfig(char *mainMsg, char *CNF)
 			setting->swapKeys = atoi(value);
 		else if (!strcmp(name, "USBD_FILE"))
 			strcpy(setting->usbd_file, value);
-		else if (!strcmp(name, "NET_HOSTwrite"))
-			setting->HOSTwrite = atoi(value);
 		else if (!strcmp(name, "Menu_Title")) {
 			strncpy(setting->Menu_Title, value, MAX_MENU_TITLE);
 			setting->Menu_Title[MAX_MENU_TITLE] = '\0';

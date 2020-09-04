@@ -5,7 +5,7 @@ EE_BIN_PKD = BOOT.ELF
 EE_OBJS = main.o pad.o config.o elf.o draw.o loader_elf.o filer.o \
 	poweroff_irx.o iomanx_irx.o filexio_irx.o ps2atad_irx.o DEV9_irx.o NETMAN_irx.o ps2ip_irx.o\
 	SMAP_irx.o ps2hdd_irx.o ps2fs_irx.o usbd_irx.o usbhdfsd_irx.o mcman_irx.o mcserv_irx.o\
-	cdfs_irx.o ps2host_irx.o vmc_fs_irx.o ps2kbd_irx.o\
+	cdfs_irx.o vmc_fs_irx.o ps2kbd_irx.o\
 	hdd.o hdl_rpc.o hdl_info_irx.o editor.o timer.o jpgviewer.o icon.o lang.o\
 	font_uLE.o makeicon.o chkesr.o sior_irx.o allowdvdv_irx.o
 EE_INCS := -I$(PS2DEV)/gsKit/include -I$(PS2SDK)/ports/include
@@ -24,8 +24,6 @@ all: githash.h $(EE_BIN_PKD)
 $(EE_BIN_PKD): $(EE_BIN)
 	ps2-packer $< $@
 
-run: all
-	ps2client -h 192.168.0.10 -t 1 execee host:$(EE_BIN)
 reset: clean
 	ps2client -h 192.168.0.10 reset
 
@@ -94,12 +92,6 @@ hdl_info/hdl_info.irx: hdl_info
 hdl_info_irx.s: hdl_info/hdl_info.irx
 	$(BIN2S) $< $@ hdl_info_irx
 
-ps2host/ps2host.irx: ps2host
-	$(MAKE) -C $<
-
-ps2host_irx.s: ps2host/ps2host.irx
-	$(BIN2S) $< $@ ps2host_irx
-
 vmc_fs/vmc_fs.irx: vmc_fs
 	$(MAKE) -C $<
 
@@ -126,7 +118,6 @@ allowdvdv_irx.s: AllowDVDV/AllowDVDV.irx
 
 clean:
 	$(MAKE) -C hdl_info clean
-	$(MAKE) -C ps2host clean
 	$(MAKE) -C loader clean
 	$(MAKE) -C vmc_fs clean
 	$(MAKE) -C AllowDVDV clean

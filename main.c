@@ -15,8 +15,6 @@ extern u8 ps2ip_irx[];
 extern int size_ps2ip_irx;
 extern u8 SMAP_irx[];
 extern int size_SMAP_irx;
-extern u8 ps2host_irx[];
-extern int size_ps2host_irx;
 extern u8 vmc_fs_irx[];
 extern int size_vmc_fs_irx;
 extern u8 ps2atad_irx[];
@@ -104,7 +102,6 @@ static u8 have_cdvd = 0;
 static u8 have_usbd = 0;
 static u8 have_usb_mass = 0;
 static u8 have_ps2smap = 0;
-static u8 have_ps2host = 0;
 static u8 have_ps2kbd = 0;
 static u8 have_hdl_info = 0;
 //State of Checkable Modules (valid header)
@@ -711,20 +708,6 @@ static void load_ps2atad(void)
 }
 //------------------------------
 //endfunc load_ps2atad
-//---------------------------------------------------------------------------
-void load_ps2host(void)
-{
-	int ret;
-
-	setupPowerOff();  //resolves the stall out when opening host: from LaunchELF's FileBrowser
-	load_ps2ip();
-	if (!have_ps2host) {
-		SifExecModuleBuffer(ps2host_irx, size_ps2host_irx, 0, NULL, &ret);
-		have_ps2host = 1;
-	}
-}
-//------------------------------
-//endfunc load_ps2host
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 //Function to show a screen with debugging info
@@ -1597,18 +1580,6 @@ Recurse_for_ESR:  //Recurse here for PS2Disc command with ESR disc
 		if (pathSep && (pathSep - path < 7) && pathSep[-1] == ':')
 			strcpy(fullpath + (pathSep - path), pathSep + 1);
 		goto ELFchecked;
-
-	} else if (!strncmp(path, "host:", 5)) {
-		initHOST();
-		party[0] = 0;
-		strcpy(fullpath, "host:");
-		if (path[5] == '/')
-			strcat(fullpath, path + 6);
-		else
-			strcat(fullpath, path + 5);
-		makeHostPath(fullpath, fullpath);
-		goto CheckELF_fullpath;
-
 	} else if (!strcasecmp(path, setting->Misc_OSDSYS)) {
 		char arg0[20], arg1[20], arg2[20], arg3[40];
 		char *args[4] = {arg0, arg1, arg2, arg3};
@@ -1898,7 +1869,6 @@ static void Reset()
 	have_usbd = 0;
 	have_usb_mass = 0;
 	have_ps2smap = 0;
-	have_ps2host = 0;
 	have_vmc_fs = 0;
 	have_smbman = 0;
 	have_ps2kbd = 0;
@@ -2006,7 +1976,6 @@ enum BOOT_DEVICE {
 	BOOT_DEVICE_CDVD = 0,
 	BOOT_DEVICE_MC,
 	BOOT_DEVICE_MASS,
-	BOOT_DEVICE_HOST,
 	BOOT_DEVICE_HDD,
 
 	BOOT_DEV_UNKNOWN = -1
@@ -2077,10 +2046,6 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (!strncmp(LaunchElfDir, "host", 4)) {
-		boot = BOOT_DEVICE_HOST;
-	}
-
 	if (((p = strrchr(LaunchElfDir, '/')) == NULL) && ((p = strrchr(LaunchElfDir, '\\')) == NULL))
 		p = strrchr(LaunchElfDir, ':');
 	if (p != NULL)
@@ -2096,11 +2061,6 @@ int main(int argc, char *argv[])
 
 	CNF_error = loadConfig(mainMsg, strcpy(CNF, "LAUNCHELF.CNF"));
 
-	if (boot == BOOT_DEVICE_HOST) {
-		//If booted from the host: device, bring up the host device at this point.
-		getIpConfig();
-		initHOST();
-	}
 	//Last chance to look at bootup screen, so allow braking here
 	/*
 	if(readpad() && (new_pad && PAD_UP))

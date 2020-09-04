@@ -176,7 +176,6 @@ typedef struct
 	int screen_y;
 	int numCNF;
 	int swapKeys;
-	int HOSTwrite;
 	int Brightness;
 	int TV_mode;
 	int Popup_Opaque;
@@ -209,7 +208,6 @@ extern int GUI_active;  // Skin and Main Skin switch
 extern int cdmode;      //Last detected disc type
 
 void load_vmc_fs(void);
-void load_ps2host(void);
 void loadHddModules(void);
 void loadHdlInfoModule(void);
 int uLE_related(char *pathout, const char *pathin);
@@ -333,8 +331,6 @@ extern int nparties;                     //Clearing this causes FileBrowser to r
 extern unsigned char *elisaFnt;
 char *PathPad_menu(const char *path);
 int getFilePath(char *out, const int cnfmode);
-void initHOST(void);
-char *makeHostPath(char *dp, char *sp);
 int ynDialog(const char *message);
 void nonDialog(char *message);
 int keyboard(char *out, int max);

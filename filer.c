@@ -111,11 +111,6 @@ char cnfmode_extL[CNFMODE_CNT][4] = {
     "*"     // cnfmode SAVE_CNF
 };
 
-int host_ready = 0;
-int host_error = 0;
-int host_elflist = 0;
-int host_use_Bsl = 1;  //By default assume that host paths use backslash
-
 unsigned long written_size;  //Used for pasting progress report
 u64 PasteTime;               //Used for pasting progress report
 
@@ -1075,26 +1070,6 @@ exit:
 //------------------------------
 //endfunc readMASS
 //--------------------------------------------------------------
-char *makeHostPath(char *dp, char *sp)
-{
-	int i;
-	char ch;
-
-	if (!host_use_Bsl)
-		return strcpy(dp, sp);
-
-	for (i = 0; i < MAX_PATH - 1; i++) {
-		ch = sp[i];
-		if (ch == '/')
-			dp[i] = '\\';
-		else
-			dp[i] = ch;
-		if (!ch)
-			break;
-	}
-	return dp;
-}
-//--------------------------------------------------------------
 char *makeFslPath(char *dp, char *sp)
 {
 	int i;
@@ -1112,111 +1087,6 @@ char *makeFslPath(char *dp, char *sp)
 	return dp;
 }
 //--------------------------------------------------------------
-void initHOST(void)
-{
-	int fd;
-
-	load_ps2host();
-	host_error = 0;
-	if ((fd = open("host:elflist.txt", O_RDONLY)) >= 0) {
-		close(fd);
-		host_elflist = 1;
-	} else {
-		host_elflist = 0;
-		if ((fd = fileXioDopen("host:")) >= 0)
-			fileXioDclose(fd);
-		else
-			host_error = 1;
-	}
-	host_ready = 1;
-}
-//--------------------------------------------------------------
-int readHOST(const char *path, FILEINFO *info, int max)
-{
-	iox_dirent_t hostcontent;
-	int hfd, rv, size, contentptr, hostcount = 0;
-	char *elflisttxt, elflistchar;
-	char host_path[MAX_PATH], host_next[MAX_PATH];
-	char Win_path[MAX_PATH];
-
-	initHOST();
-	snprintf(host_path, MAX_PATH - 1, "%s", path);
-	if (!strncmp(path, "host:/", 6))
-		strcpy(host_path + 5, path + 6);
-	if ((host_elflist) && !strcmp(host_path, "host:")) {
-		if ((hfd = open("host:elflist.txt", O_RDONLY, 0)) < 0)
-			return 0;
-		if ((size = lseek(hfd, 0, SEEK_END)) <= 0) {
-			close(hfd);
-			return 0;
-		}
-		elflisttxt = (char *)memalign(64, size);
-		lseek(hfd, 0, SEEK_SET);
-		read(hfd, elflisttxt, size);
-		close(hfd);
-		contentptr = 0;
-		for (rv = 0; rv <= size; rv++) {
-			elflistchar = elflisttxt[rv];
-			if ((elflistchar == 0x0a) || (rv == size)) {
-				host_next[contentptr] = 0;
-				snprintf(host_path, MAX_PATH - 1, "%s%s", "host:", host_next);
-				clear_mcTable(&info[hostcount].stats);
-				if ((hfd = open(makeHostPath(Win_path, host_path), O_RDONLY)) >= 0) {
-					close(hfd);
-					info[hostcount].stats.AttrFile = MC_ATTR_norm_file;
-					makeFslPath(info[hostcount++].name, host_next);
-				} else if ((hfd = fileXioDopen(Win_path)) >= 0) {
-					fileXioDclose(hfd);
-					info[hostcount].stats.AttrFile = MC_ATTR_norm_folder;
-					makeFslPath(info[hostcount++].name, host_next);
-				}
-				contentptr = 0;
-				if (hostcount > max)
-					break;
-			} else if (elflistchar != 0x0d) {
-				host_next[contentptr] = elflistchar;
-				contentptr++;
-			}
-		}
-		free(elflisttxt);
-		return hostcount - 1;
-	}
-	//This point is only reached if elflist.txt is NOT to be used
-
-	if ((hfd = fileXioDopen(makeHostPath(Win_path, host_path))) < 0)
-		return 0;
-	strcpy(host_path, Win_path);
-	while ((rv = fileXioDread(hfd, &hostcontent))) {
-		if (strcmp(hostcontent.name, ".") && strcmp(hostcontent.name, "..")) {
-			size_valid = 1;
-			time_valid = 1;
-			snprintf(Win_path, MAX_PATH - 1, "%s%s", host_path, hostcontent.name);
-			strcpy(info[hostcount].name, hostcontent.name);
-			clear_mcTable(&info[hostcount].stats);
-
-			if (!(hostcontent.stat.mode & FIO_S_IFDIR))  //if not a directory
-				info[hostcount].stats.AttrFile = MC_ATTR_norm_file;
-			else
-				info[hostcount].stats.AttrFile = MC_ATTR_norm_folder;
-
-			info[hostcount].stats.FileSizeByte = hostcontent.stat.size;
-			info[hostcount].stats.Reserve2 = hostcontent.stat.hisize;  //taking an unused(?) unknown for the high bits
-			memcpy((void *)&info[hostcount].stats._Create, hostcontent.stat.ctime, 8);
-			info[hostcount].stats._Create.Year += 1900;
-			memcpy((void *)&info[hostcount].stats._Modify, hostcontent.stat.mtime, 8);
-			info[hostcount].stats._Modify.Year += 1900;
-			hostcount++;
-			if (hostcount >= max)
-				break;
-		}
-	}
-	fileXioDclose(hfd);
-	strcpy(info[hostcount].name, "\0");
-	return hostcount;
-}
-//------------------------------
-//endfunc readHOST
-//--------------------------------------------------------------
 int getDir(const char *path, FILEINFO *info)
 {
 	int max = MAX_ENTRY - 2;
@@ -1230,8 +1100,6 @@ int getDir(const char *path, FILEINFO *info)
 		n = readMASS(path, info, max);
 	else if (!strncmp(path, "cdfs", 4))
 		n = readCD(path, info, max);
-	else if (!strncmp(path, "host", 4))
-		n = readHOST(path, info, max);
 	else if (!strncmp(path, "vmc", 3))
 		n = readVMC(path, info, max);
 	else
@@ -1377,11 +1245,7 @@ int menu(const char *path, FILEINFO *file)
 	memset(enable, TRUE, NUM_MENU);  //Assume that all menu items are legal by default
 
 	//identify cases where write access is illegal, and disable menu items accordingly
-	if ((!strncmp(path, "cdfs", 4))                           //Writing is always illegal for CDVD drive
-	    || ((!strncmp(path, "host", 4))                       //host: has special cases
-	        && ((!setting->HOSTwrite)                         //host: Writing is illegal if not enabled in CNF
-	            || (host_elflist && !strcmp(path, "host:/"))  //it's also illegal in elflist.txt
-	            )))
+	if ((!strncmp(path, "cdfs", 4)))                           //Writing is always illegal for CDVD drive
 		write_disabled = 1;
 
 	if (!strcmp(path, "hdd0:/") || path[0] == 0)  //No menu cmds in partition/device lists
@@ -1704,8 +1568,6 @@ u64 getFileSize(const char *path, const FILEINFO *file)
 			dir[3] = ret + '0';
 		} else
 			sprintf(dir, "%s%s", path, file->name);
-		if (!strncmp(dir, "host:/", 6))
-			makeHostPath(dir + 5, dir + 6);
 
 		fileXioGetStat(dir, &stat);
 		size = stat.size;
@@ -1730,8 +1592,6 @@ int delete (const char *path, const FILEINFO *file)
 	}
 	sprintf(dir, "%s%s", path, file->name);
 	genLimObjName(dir, 0);
-	if (!strncmp(dir, "host:/", 6))
-		makeHostPath(dir + 5, dir + 6);
 
 	if (file->stats.AttrFile & sceMcFileAttrSubdir) {  //Is the object to delete a folder ?
 		strcat(dir, "/");
@@ -1818,29 +1678,6 @@ int Rename(const char *path, const FILEINFO *file, const char *name)
 					ret = -EEXIST;
 			}
 		}
-	} else if (!strncmp(path, "host", 4)) {
-		int temp_fd;
-
-		strcpy(oldPath, path);
-		if (!strncmp(oldPath, "host:/", 6))
-			makeHostPath(oldPath + 5, oldPath + 6);
-		strcpy(newPath, oldPath + 5);
-		strcat(oldPath, file->name);
-		strcat(newPath, name);
-		if (file->stats.AttrFile & sceMcFileAttrSubdir) {  //Rename a folder ?
-			ret = (temp_fd = fileXioDopen(oldPath));
-			if (temp_fd >= 0) {
-				ret = fileXioIoctl(temp_fd, IOCTL_RENAME, (void *)newPath);
-				fileXioDclose(temp_fd);
-			}
-		} else if (file->stats.AttrFile & sceMcFileAttrFile) {  //Rename a file ?
-			ret = (temp_fd = open(oldPath, O_RDONLY));
-			if (temp_fd >= 0) {
-				ret = _ps2sdk_ioctl(temp_fd, IOCTL_RENAME, (void *)newPath);
-				close(temp_fd);
-			}
-		} else  //This was neither a folder nor a file !!!
-			return -1;
 	} else {  //For all other devices
 		sprintf(oldPath, "%s%s", path, file->name);
 		sprintf(newPath, "%s%s", path, name);
@@ -1883,18 +1720,6 @@ int newdir(const char *path, const char *name)
 		mcSync(0, NULL, &ret);
 		if (ret == -4)
 			ret = -EEXIST;  //return fileXio error code for pre-existing folder
-	} else if (!strncmp(path, "host", 4)) {
-		strcpy(dir, path);
-		strcat(dir, name);
-		genLimObjName(dir, 0);
-		if (!strncmp(dir, "host:/", 6))
-			makeHostPath(dir + 5, dir + 6);
-		if ((ret = fileXioDopen(dir)) >= 0) {
-			fileXioDclose(ret);
-			ret = -EEXIST;  //return fileXio error code for pre-existing folder
-		} else {
-			ret = fileXioMkdir(dir, fileMode);  //Create the new folder
-		}
 	} else {  //For all other devices
 		strcpy(dir, path);
 		strcat(dir, name);
@@ -2015,9 +1840,6 @@ restart_copy:  //restart point for PM_PSU_RESTORE to reprocess modified argument
 			genLimObjName(tmp, 4);  //Limit name to leave room for 4 characters more
 			strcat(tmp, ".psu");    //add the PSU file extension
 
-			if (!strncmp(tmp, "host:/", 6))
-				makeHostPath(tmp + 5, tmp + 6);
-
 			if (setting->PSU_DateNames && setting->PSU_NoOverwrite) {
 				if (0 <= (out_fd = genOpen(tmp, O_RDONLY))) {  //Name conflict ?
 					genClose(out_fd);
@@ -2108,8 +1930,6 @@ restart_copy:  //restart point for PM_PSU_RESTORE to reprocess modified argument
 		} else if (PasteMode == PM_MC_RESTORE) {  //MC Restore mode folder paste preparation
 			sprintf(tmp, "%s/PS2_MC_Backup_Attributes.BUP.bin", in);
 
-			if (!strncmp(tmp, "host:/", 6))
-				makeHostPath(tmp + 5, tmp + 6);
 			in_fd = genOpen(tmp, O_RDONLY);
 
 			if (in_fd >= 0) {
@@ -2233,23 +2053,16 @@ restart_copy:  //restart point for PM_PSU_RESTORE to reprocess modified argument
 				ret = MC_SFI;                                   //default request for changing entire mcTable
 				if (strncmp(in, "mc", 2)) {                     //Handle file copied from non-MC to MC
 					file.stats.AttrFile = MC_ATTR_norm_folder;  //normalize MC folder attribute
-					if (!strncmp(in, "host", 4)) {              //Handle folder copied from host: to MC
-						ret = 4;                                //request change only of main attribute for host:
-					}                                           //ends host: source clause
 				}                                               //ends non-MC source clause
 				mcSetFileInfo(out[2] - '0', 0, &out[4], &file.stats, ret);
 				mcSync(0, NULL, &dummy);
 			} else {                                    //Handle folder copied to non-MC
-				if (!strncmp(out, "host", 4)) {         //for files copied to host: we skip Chstat
-				} else if (!strncmp(out, "mass", 4)) {  //for files copied to mass: we skip Chstat
+			        if (!strncmp(out, "mass", 4)) {  //for files copied to mass: we skip Chstat
 				} else {                                //for other devices we use fileXio_ stuff
 					memcpy(iox_stat.ctime, (void *)&file.stats._Create, 8);
 					memcpy(iox_stat.mtime, (void *)&file.stats._Modify, 8);
 					memcpy(iox_stat.atime, iox_stat.mtime, 8);
 					ret = FIO_CST_CT | FIO_CST_AT | FIO_CST_MT;  //Request timestamp stat change
-					if (!strncmp(in, "host", 4)) {               //Handle folder copied from host:
-						ret = 0;                                 //Request NO stat change
-					}
 					dummy = fileXioChStat(out, &iox_stat, ret);
 				}
 			}
@@ -2312,8 +2125,6 @@ non_PSU_RESTORE_init:
 		in_fd = PM_file[recurses];
 		size = mcT_head_p->size;
 	} else {  //Any other mode than PM_PSU_RESTORE
-		if (!strncmp(in, "host:/", 6))
-			makeHostPath(in + 5, in + 6);
 		in_fd = genOpen(in, O_RDONLY);
 		if (in_fd < 0)
 			goto copy_file_exit;
@@ -2339,8 +2150,6 @@ non_PSU_RESTORE_init:
 			psu_pad_size = 0;
 		PSU_content++;  //Increase PSU content header count
 	} else {            //Any other PasteMode than PM_PSU_BACKUP needs a new output file
-		if (!strncmp(out, "host:/", 6))
-			makeHostPath(out + 5, out + 6);
 		genLimObjName(out, 0);                                //Limit dest file name
 		genRemove(out);                                       //Remove old file if present
 		out_fd = genOpen(out, O_WRONLY | O_TRUNC | O_CREAT);  //Create new file
@@ -2360,10 +2169,8 @@ non_PSU_RESTORE_init:
 		                    //VMC contents should use the same size, as VMCs will often be stored on USB
 	else if (!strncmp(in, "mc", 2))
 		buffSize = 262144;  //Use 256KB if reading from MC (still pretty slow)
-	else if (!strncmp(out, "host", 4))
-		buffSize = 393216;  //Use 384KB if writing to HOST (acceptable)
-	else if ((!strncmp(in, "mass", 4)) || (!strncmp(in, "host", 4)))
-		buffSize = 524288;  //Use 512KB reading from USB or HOST (acceptable)
+	else if ((!strncmp(in, "mass", 4)))
+		buffSize = 524288;  //Use 512KB reading from USB (acceptable)
 
 	if (size < buffSize)
 		buffSize = size;
@@ -2515,25 +2322,18 @@ non_PSU_RESTORE_init:
 		ret = MC_SFI;                                 //default request for changing entire mcTable
 		if (strncmp(in, "mc", 2)) {                   //Handle file copied from non-MC to MC
 			file.stats.AttrFile = MC_ATTR_norm_file;  //normalize MC file attribute
-			if (!strncmp(in, "host", 4)) {            //Handle folder copied from host: to MC
-				ret = 4;                              //request change only of main attribute for host:
-			}                                         //ends host: source clause
 		}                                             //ends non-MC source clause
 		if (mctype_PSx == 2) {                        //if copying to a PS2 MC
 			mcSetFileInfo(out[2] - '0', 0, &out[4], &file.stats, ret);
 			mcSync(0, NULL, &dummy);
 		}
 	} else {                                    //Handle file copied to non-MC
-		if (!strncmp(out, "host", 4)) {         //for files copied to host: we skip Chstat
-		} else if (!strncmp(out, "mass", 4)) {  //for files copied to mass: we skip Chstat
+	        if (!strncmp(out, "mass", 4)) {  //for files copied to mass: we skip Chstat
 		} else {                                //for other devices we use fileXio_ stuff
 			memcpy(iox_stat.ctime, (void *)&file.stats._Create, 8);
 			memcpy(iox_stat.mtime, (void *)&file.stats._Modify, 8);
 			memcpy(iox_stat.atime, iox_stat.mtime, 8);
 			ret = FIO_CST_CT | FIO_CST_AT | FIO_CST_MT;  //Request timestamp stat change
-			if (!strncmp(in, "host", 4)) {               //Handle file copied from host:
-				ret = 0;                                 //Request NO stat change
-			}
 			dummy = fileXioChStat(out, &iox_stat, ret);
 		}
 	}
@@ -3626,9 +3426,6 @@ int getFilePath(char *out, int cnfmode)
 						}
 						j = genFixPath(path, tmp1);
 						strcpy(tmp2, tmp1);
-						if (!strncmp(path, "host:", 5)) {
-							makeHostPath(tmp2, tmp1);
-						}
 						strcat(tmp2, files[browser_sel].name);
 						if ((x = fileXioMount(tmp, tmp2, FIO_MT_RDWR)) >= 0) {
 							if ((j >= 0) && (j < MOUNT_LIMIT)) {
@@ -4019,8 +3816,6 @@ void submenu_func_GetSize(char *mess, char *path, FILEINFO *files)
 		/*
 		printf("path =\"%s\"\r\n", path);
 		printf("file =\"%s\"\r\n", files[sel].name);
-		if	(!strncmp(filepath, "host:/", 6))
-			makeHostPath(filepath+5, filepath+6);
 		test = fileXioGetStat(filepath, &stats);
 		printf("test = %d\r\n", test);
 		printf("mode = %08X\r\n", stats.mode);
