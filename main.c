@@ -19,8 +19,6 @@ extern u8 ps2host_irx[];
 extern int size_ps2host_irx;
 extern u8 vmc_fs_irx[];
 extern int size_vmc_fs_irx;
-extern u8 ps2ftpd_irx[];
-extern int size_ps2ftpd_irx;
 extern u8 ps2atad_irx[];
 extern int size_ps2atad_irx;
 extern u8 ps2hdd_irx[];
@@ -109,7 +107,6 @@ static u8 have_usbd = 0;
 static u8 have_usb_mass = 0;
 static u8 have_ps2smap = 0;
 static u8 have_ps2host = 0;
-static u8 have_ps2ftpd = 0;
 static u8 have_ps2kbd = 0;
 static u8 have_hdl_info = 0;
 //State of Checkable Modules (valid header)
@@ -197,7 +194,6 @@ static void load_ps2dev9(void);
 static void load_ps2ip(void);
 static void load_ps2atad(void);
 static void ShowDebugInfo(void);
-static void load_ps2ftpd(void);
 static void load_ps2netfs(void);
 static void loadBasicModules(void);
 static void loadCdModules(void);
@@ -796,24 +792,6 @@ void load_vmc_fs(void)
 //------------------------------
 //endfunc load_vmc_fs
 //---------------------------------------------------------------------------
-static void load_ps2ftpd(void)
-{
-	int ret;
-	int arglen;
-	char *arg_p;
-
-	arg_p = "-anonymous";
-	arglen = strlen(arg_p);
-
-	load_ps2ip();
-	if (!have_ps2ftpd) {
-		SifExecModuleBuffer(ps2ftpd_irx, size_ps2ftpd_irx, arglen, arg_p, &ret);
-		have_ps2ftpd = 1;
-	}
-}
-//------------------------------
-//endfunc load_ps2ftpd
-//---------------------------------------------------------------------------
 static void load_ps2netfs(void)
 {
 	int ret;
@@ -1155,7 +1133,6 @@ static void loadNetModules(void)
 		//             //But sometimes it is useful to do it again (HDD)
 		// Also, my module checking makes some other tests redundant
 		load_ps2netfs();  // loads ps2netfs from internal buffer
-		load_ps2ftpd();   // loads ps2dftpd from internal buffer
 		have_NetModules = 1;
 	}
 	strcpy(mainMsg, netConfig);
@@ -1944,7 +1921,6 @@ static void Reset()
 	have_ps2host = 0;
 	have_vmc_fs = 0;
 	have_smbman = 0;
-	have_ps2ftpd = 0;
 	have_ps2kbd = 0;
 	have_NetModules = 0;
 	have_HDD_modules = 0;
