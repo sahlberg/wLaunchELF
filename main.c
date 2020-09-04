@@ -11,8 +11,6 @@ extern u8 DEV9_irx[];
 extern int size_DEV9_irx;
 extern u8 NETMAN_irx[];
 extern int size_NETMAN_irx;
-extern u8 ps2ip_irx[];
-extern int size_ps2ip_irx;
 extern u8 SMAP_irx[];
 extern int size_SMAP_irx;
 extern u8 vmc_fs_irx[];
@@ -107,7 +105,6 @@ static u8 have_hdl_info = 0;
 //State of Checkable Modules (valid header)
 static u8 have_poweroff = 0;
 static u8 have_ps2dev9 = 0;
-static u8 have_ps2ip = 0;
 static u8 have_ps2atad = 0;
 static u8 have_ps2hdd = 0;
 static u8 have_ps2fs = 0;
@@ -185,7 +182,7 @@ static int drawMainScreen2(int TV_mode);
 static void delay(int count);
 static void initsbv_patches(void);
 static void load_ps2dev9(void);
-static void load_ps2ip(void);
+static void load_ps2smap(void);
 static void load_ps2atad(void);
 static void ShowDebugInfo(void);
 static void loadBasicModules(void);
@@ -652,15 +649,11 @@ static void load_ps2dev9(void)
 //------------------------------
 //endfunc load_ps2dev9
 //---------------------------------------------------------------------------
-static void load_ps2ip(void)
+static void load_ps2smap(void)
 {
 	int ret;
 
 	load_ps2dev9();
-	if (!have_ps2ip) {
-		SifExecModuleBuffer(ps2ip_irx, size_ps2ip_irx, 0, NULL, &ret);
-		have_ps2ip = 1;
-	}
 	if (!have_ps2smap) {
 		SifExecModuleBuffer(SMAP_irx, size_SMAP_irx,
 		                    if_conf_len, &if_conf[0], &ret);
@@ -668,7 +661,7 @@ static void load_ps2ip(void)
 	}
 }
 //------------------------------
-//endfunc load_ps2ip
+//endfunc load_ps2smap
 //---------------------------------------------------------------------------
 static void load_ps2atad(void)
 {

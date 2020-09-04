@@ -3,7 +3,7 @@
 EE_BIN = BOOT-UNC.ELF
 EE_BIN_PKD = BOOT.ELF
 EE_OBJS = main.o pad.o config.o elf.o draw.o loader_elf.o filer.o \
-	poweroff_irx.o iomanx_irx.o filexio_irx.o ps2atad_irx.o DEV9_irx.o NETMAN_irx.o ps2ip_irx.o\
+	poweroff_irx.o iomanx_irx.o filexio_irx.o ps2atad_irx.o DEV9_irx.o NETMAN_irx.o \
 	SMAP_irx.o ps2hdd_irx.o ps2fs_irx.o usbd_irx.o usbhdfsd_irx.o mcman_irx.o mcserv_irx.o\
 	cdfs_irx.o vmc_fs_irx.o ps2kbd_irx.o\
 	hdd.o hdl_rpc.o hdl_info_irx.o editor.o timer.o jpgviewer.o icon.o lang.o\
@@ -73,9 +73,6 @@ iomanx_irx.s: $(PS2SDK)/iop/irx/iomanX.irx
 
 filexio_irx.s: $(PS2SDK)/iop/irx/fileXio.irx
 	$(BIN2S) $< $@ filexio_irx
-
-ps2ip_irx.s: $(PS2SDK)/iop/irx/ps2ip.irx
-	$(BIN2S) $< $@ ps2ip_irx
 
 ps2atad_irx.s: $(PS2SDK)/iop/irx/ps2atad.irx
 	$(BIN2S) $< $@ ps2atad_irx
