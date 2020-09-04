@@ -1,8 +1,5 @@
 #.SILENT:
 
-SMB = 0
-#set SMB to 1 to build uLe with smb support
-
 EE_BIN = BOOT-UNC.ELF
 EE_BIN_PKD = BOOT.ELF
 EE_OBJS = main.o pad.o config.o elf.o draw.o loader_elf.o filer.o \
@@ -11,20 +8,12 @@ EE_OBJS = main.o pad.o config.o elf.o draw.o loader_elf.o filer.o \
 	cdfs_irx.o ps2ftpd_irx.o ps2host_irx.o vmc_fs_irx.o ps2kbd_irx.o\
 	hdd.o hdl_rpc.o hdl_info_irx.o editor.o timer.o jpgviewer.o icon.o lang.o\
 	font_uLE.o makeicon.o chkesr.o sior_irx.o allowdvdv_irx.o
-ifeq ($(SMB),1)
-	EE_OBJS += smbman.o
-endif
-
 EE_INCS := -I$(PS2DEV)/gsKit/include -I$(PS2SDK)/ports/include
 
 EE_LDFLAGS := -L$(PS2DEV)/gsKit/lib -L$(PS2SDK)/ports/lib -s
 EE_LIBS = -lgskit -ldmakit -ljpeg -lpad -lmc -lhdd -lkbd -lm \
 	-lcdvd -lfileXio -lpatches -lpoweroff -ldebug -lsior
 EE_CFLAGS := -mno-gpopt -G0
-
-ifeq ($(SMB),1)
-	EE_CFLAGS += -DSMB
-endif
 
 BIN2S = $(PS2SDK)/bin/bin2s
 
@@ -116,11 +105,6 @@ ps2host/ps2host.irx: ps2host
 
 ps2host_irx.s: ps2host/ps2host.irx
 	$(BIN2S) $< $@ ps2host_irx
-
-ifeq ($(SMB),1)
-smbman_irx.s: $(PS2SDK)/iop/irx/smbman.irx
-	$(BIN2S) $< $@ smbman_irx
-endif
 
 vmc_fs/vmc_fs.irx: vmc_fs
 	$(MAKE) -C $<

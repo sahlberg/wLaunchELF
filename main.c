@@ -2,10 +2,6 @@
 //File name:   main.c
 //---------------------------------------------------------------------------
 #include "launchelf.h"
-#ifdef SMB
-#include "SMB_test.h"
-#include "ps2smb.h"
-#endif
 
 extern u8 iomanx_irx[];
 extern int size_iomanx_irx;
@@ -19,10 +15,6 @@ extern u8 SMAP_irx[];
 extern int size_SMAP_irx;
 extern u8 ps2host_irx[];
 extern int size_ps2host_irx;
-#ifdef SMB
-extern u8 smbman_irx[];
-extern int size_smbman_irx;
-#endif
 extern u8 vmc_fs_irx[];
 extern int size_vmc_fs_irx;
 extern u8 ps2ftpd_irx[];
@@ -202,9 +194,6 @@ static void initsbv_patches(void);
 static void load_ps2dev9(void);
 static void load_ps2ip(void);
 static void load_ps2atad(void);
-#ifdef SMB
-static void load_smbman(void);
-#endif
 static void ShowDebugInfo(void);
 static void load_ps2ftpd(void);
 static void load_ps2netfs(void);
@@ -743,23 +732,6 @@ void load_ps2host(void)
 //------------------------------
 //endfunc load_ps2host
 //---------------------------------------------------------------------------
-#ifdef SMB
-static void load_smbman(void)
-{
-	int ret;
-
-	setupPowerOff();  //resolves stall out when opening smb: FileBrowser
-	load_ps2ip();
-	if (!have_smbman) {
-		SifExecModuleBuffer(smbman_irx, size_smbman_irx, 0, NULL, &ret);
-		have_smbman = 1;
-	}
-}
-//------------------------------
-//endfunc load_smbman
-//---------------------------------------------------------------------------
-#include "SMB_test.c"
-#endif
 //---------------------------------------------------------------------------
 //Function to show a screen with debugging info
 //------------------------------
@@ -767,13 +739,6 @@ static void ShowDebugInfo(void)
 {
 	char TextRow[256];
 	int i, event, post_event = 0;
-#ifdef SMB
-	int row;
-
-	load_smbman();
-	loadSMBCNF("mc0:/SYS-CONF/SMB.CNF");
-	smbCurrentServer = 0;
-#endif
 	event = 1;  //event = initial entry
 	//----- Start of event loop -----
 	while (1) {
@@ -781,23 +746,6 @@ static void ShowDebugInfo(void)
 		waitAnyPadReady();
 		if (readpad() && new_pad) {
 			event |= 2;
-#ifdef SMB
-			if (new_pad & PAD_CIRCLE) {
-				if (smbCurrentServer + 1 < smbServerListCount)
-					smbCurrentServer++;
-				else
-					smbCurrentServer = 0;
-			} else if (new_pad & PAD_CROSS) {
-				if (smbCurrentServer > 0)
-					smbCurrentServer--;
-				else
-					smbCurrentServer = smbServerListCount - 1;
-			} else if (new_pad & PAD_SQUARE) {
-				smbLogon_Server(smbCurrentServer);
-			} else if (new_pad & PAD_TRIANGLE) {
-				smbServerList[smbCurrentServer].Server_Logon_f = 0;
-			} else
-#endif
 			{
 				if (setting->GUI_skin[0]) {
 					GUI_active = 1;
@@ -822,36 +770,7 @@ static void ShowDebugInfo(void)
 			sprintf(TextRow, "boot_path == \"%s\"", boot_path);
 			PrintRow(-1, TextRow);
 			sprintf(TextRow, "LaunchElfDir == \"%s\"", LaunchElfDir);
-#ifndef SMB
 			PrintRow(-1, TextRow);
-#else
-			row = PrintRow(-1, TextRow);
-			int si = smbCurrentServer;
-			sprintf(TextRow, "Server Index = %d of %d", si, smbServerListCount);
-			PrintRow(row + 1, TextRow);
-			sprintf(TextRow, "Server_IP = %s", smbServerList[si].Server_IP);
-			PrintRow(-1, TextRow);
-			sprintf(TextRow, "Server_Port = %d", smbServerList[si].Server_Port);
-			PrintRow(-1, TextRow);
-			sprintf(TextRow, "Username = %s", smbServerList[si].Username);
-			PrintRow(-1, TextRow);
-			sprintf(TextRow, "Password = %s", smbServerList[si].Password);
-			PrintRow(-1, TextRow);
-			sprintf(TextRow, "PasswordType = %d", smbServerList[si].PasswordType);
-			PrintRow(-1, TextRow);
-			sprintf(TextRow, "PassHash_f = %d", smbServerList[si].PassHash_f);
-			PrintRow(-1, TextRow);
-			sprintf(TextRow, "Server_Logon_f = %d", smbServerList[si].Server_Logon_f);
-			PrintRow(-1, TextRow);
-			sprintf(TextRow, "Server_FBID = %s", smbServerList[si].Server_FBID);
-			PrintRow(-1, TextRow);
-			sprintf(TextRow, "\xFF"
-			                 "0 Index++  \xFF"
-			                 "1 Index--  \xFF"
-			                 "2 Logon  \xFF"
-			                 "3 Forget Logon");
-			PrintRow(-1, TextRow);
-#endif
 		}  //ends if(event||post_event)
 		drawScr();
 		post_event = event;
@@ -2123,10 +2042,6 @@ static void InitializeBootExecPath()
 //------------------------------
 //endfunc InitializeBootExecPath
 //---------------------------------------------------------------------------
-
-//#ifdef SMB
-//#include "SMB_test.c"
-//#endif
 
 //---------------------------------------------------------------------------
 enum BOOT_DEVICE {
