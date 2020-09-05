@@ -791,6 +791,10 @@ int genRmdir(char *path)
 	int ret;
 
 	genLimObjName(path, 0);
+	if (!strncmp(path, "smb2", 4)) {
+		return SMB2rmdir(path);
+	}
+
 	ret = fileXioRmdir(path);
 	if (!strncmp(path, "vmc", 3))
 		fileXioDevctl("vmc0:", DEVCTL_VMCFS_CLEAN, NULL, 0, NULL, 0);
@@ -1598,7 +1602,9 @@ int delete (const char *path, const FILEINFO *file)
 			if (ret < 0)
 				return -1;
 		}
-		if (!strncmp(dir, "mc", 2)) {
+		if (!strncmp(dir, "smb2", 4)) {
+			ret = SMB2rmdir(dir);
+		} else if (!strncmp(dir, "mc", 2)) {
 			mcSync(0, NULL, NULL);
 			mcDelete(dir[2] - '0', 0, &dir[4]);
 			mcSync(0, NULL, &ret);

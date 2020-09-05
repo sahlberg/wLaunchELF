@@ -309,6 +309,33 @@ finished:
         return rc;
 }
 
+int SMB2rmdir(const char *path)
+{
+        struct smb2_share *share = NULL;
+        char *name = NULL, *p = NULL;
+        int rc = 0;
+
+        if (path[6] == '\0') {
+                return -EINVAL;
+        }
+
+        find_share(path, &name, &p, &share);
+        if (share == NULL) {
+                free(name);
+                return -EINVAL;
+        }
+
+        p[strlen(p) - 1] = 0;
+        rc = smb2_rmdir(share->smb2, p);
+        if (rc) {
+                goto finished;
+        }
+
+finished:
+        free(name);
+        return rc;
+}
+
 //---------------------------------------------------------------------------
 //End of file: smb2.c
 //---------------------------------------------------------------------------

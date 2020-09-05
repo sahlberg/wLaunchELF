@@ -16,6 +16,7 @@ extern struct smb2_share *smb2_shares;
 int init_smb2(const char *ip, const char *netmask, const char *gw);
 int readSMB2(const char *path, FILEINFO *info, int max);
 int SMB2mkdir(const char *dir, int fileMode);
+int SMB2rmdir(const char *dir);
 
 //---------------------------------------------------------------------------
 //End of file: smb2.h
