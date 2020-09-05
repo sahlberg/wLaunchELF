@@ -4,6 +4,19 @@
 #include "launchelf.h"
 #include "smb2.h"
 
+enum vfs_type {
+	FS_PS2 = 0,
+	FS_SMB2
+};
+
+struct vfs_fh {
+	enum vfs_type type;
+	union {
+		int fd;
+		struct SMB2FH *fh;
+	};
+};
+
 typedef struct
 {
 	unsigned char unknown;
@@ -3957,6 +3970,89 @@ void submenu_func_psuPaste(char *mess, char *path)
 }
 //------------------------------
 //endfunc submenu_func_psuPaste
+
+struct vfs_fh *vfsOpen(char *path, int mode)
+{
+	struct vfs_fh *fh;
+
+	genLimObjName(path, 0);
+
+	fh = malloc(sizeof(struct vfs_fh));
+	if (fh == NULL) {
+		return NULL;
+	}
+	if (!strncmp(path, "smb2", 4)) {
+		fh->type = FS_SMB2;
+		fh->fh = SMB2open(path, mode);
+		if (fh->fh == NULL) {
+			free(fh);
+			return NULL;
+		}
+	} else {
+		fh->type = FS_PS2;
+		fh->fd = open(path, mode, fileMode);
+		if (fh->fd == -1) {
+			free(fh);
+			return NULL;
+		}
+	}
+	return fh;
+}
+
+int vfsLseek(struct vfs_fh *fh, int where, int how)
+{
+	switch(fh->type) {
+	case FS_PS2:
+		return lseek(fh->fd, where, how);
+	case FS_SMB2:
+		return SMB2lseek(fh->fh, where, how);
+	}
+	return -1;
+}
+
+int vfsRead(struct vfs_fh *fh, void *buf, int size)
+{
+	switch(fh->type) {
+	case FS_PS2:
+		return read(fh->fd, buf, size);
+	case FS_SMB2:
+		return SMB2read(fh->fh, buf, size);
+	}
+	return -1;
+}
+
+int vfsWrite(struct vfs_fh *fh, void *buf, int size)
+{
+	switch(fh->type) {
+	case FS_PS2:
+		return write(fh->fd, buf, size);
+	case FS_SMB2:
+		return SMB2write(fh->fh, buf, size);
+	}
+	return -1;
+}
+
+int vfsClose(struct vfs_fh *fh)
+{
+	int rc = 0;
+
+	if (fh == NULL) {
+		return 0;
+	}
+
+	switch(fh->type) {
+	case FS_PS2:
+		rc = close(fh->fd);
+		break;
+	case FS_SMB2:
+		rc = SMB2close(fh->fh);
+		free(fh->fh);
+		break;
+	}
+	free(fh);
+	return rc;
+}
+
 //--------------------------------------------------------------
 //End of file: filer.c
 //--------------------------------------------------------------

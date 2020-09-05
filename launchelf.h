@@ -350,6 +350,12 @@ int mountParty(const char *party);
 void unmountParty(int party_ix);
 void unmountAll(void);
 int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode);
+/* VFS layer */
+struct vfs_fh *vfsOpen(char *path, int mode);
+int vfsLseek(struct vfs_fh *fh, int where, int how);
+int vfsRead(struct vfs_fh *fh, void *buf, int size);
+int vfsWrite(struct vfs_fh *fh, void *buf, int size);
+int vfsClose(struct vfs_fh *fh);
 
 /* hdd.c */
 void DebugDisp(char *Message);

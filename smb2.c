@@ -18,10 +18,6 @@
 
 #include <smb2/libsmb2.h>
 
-struct smb2fh *lf = NULL;
-#define DBG(message) \
-        smb2_write(smb2_shares->smb2, lf, message, strlen(message));
-        
 struct smb2_share *smb2_shares = NULL;
 
 static void EthStatusCheckCb(s32 alarm_id, u16 time, void *common)
@@ -209,11 +205,6 @@ int readSMB2(const char *path, FILEINFO *info, int max)
         char *name = NULL, *p;
         struct smb2dirent *ent;
 
-        if (lf == NULL) {
-                lf = smb2_open(smb2_shares->smb2, "LOG.txt", O_CREAT|O_WRONLY);
-                DBG("Log started\n");
-        }
-
         /* Root of smb2: is a list of all the named shares */
         if (path[6] == '\0') {
                 for (share = smb2_shares; share; share = share->next) {
@@ -325,7 +316,9 @@ int SMB2rmdir(const char *path)
                 return -EINVAL;
         }
 
-        p[strlen(p) - 1] = 0;
+        if (p[strlen(p) - 1] == '/') {
+                p[strlen(p) - 1] = 0;
+        }
         rc = smb2_rmdir(share->smb2, p);
         if (rc) {
                 goto finished;
@@ -334,6 +327,83 @@ int SMB2rmdir(const char *path)
 finished:
         free(name);
         return rc;
+}
+
+int SMB2unlink(const char *path)
+{
+        struct smb2_share *share = NULL;
+        char *name = NULL, *p = NULL;
+        int rc = 0;
+
+        if (path[6] == '\0') {
+                return -EINVAL;
+        }
+
+        find_share(path, &name, &p, &share);
+        if (share == NULL) {
+                free(name);
+                return -EINVAL;
+        }
+
+        rc = smb2_unlink(share->smb2, p);
+        if (rc) {
+                goto finished;
+        }
+
+finished:
+        free(name);
+        return rc;
+}
+
+struct SMB2FH *SMB2open(const char *path, int mode)
+{
+        struct smb2_share *share = NULL;
+        char *name = NULL, *p = NULL;
+        struct SMB2FH *fh;
+
+        if (path[6] == '\0') {
+                return NULL;
+        }
+
+        find_share(path, &name, &p, &share);
+        if (share == NULL) {
+                free(name);
+                return NULL;
+        }
+        fh = malloc(sizeof(struct SMB2FH));
+        if (fh == NULL) {
+                free(name);
+                return NULL;
+        }
+
+        fh->smb2 = share->smb2;
+        fh->fh = smb2_open(share->smb2, p, mode);
+        free(name);
+        if(fh->fh == NULL) {
+                free(fh);
+                return NULL;
+        }
+        return fh;
+}
+
+int SMB2close(struct SMB2FH *fh)
+{
+        return smb2_close(fh->smb2, fh->fh);
+}
+
+int SMB2read(struct SMB2FH *fh, char *buf, int size)
+{
+        return smb2_read(fh->smb2, fh->fh, buf, size);
+}
+
+int SMB2write(struct SMB2FH *fh, char *buf, int size)
+{
+        return smb2_write(fh->smb2, fh->fh, buf, size);
+}
+
+int SMB2lseek(struct SMB2FH *fh, int where, int how)
+{
+        return smb2_lseek(fh->smb2, fh->fh, where, how, NULL);
 }
 
 //---------------------------------------------------------------------------
