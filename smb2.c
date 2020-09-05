@@ -104,16 +104,13 @@ static int loadSMB2CNF(char *path)
                                 smb2_share = NULL;
                                 continue;
                         }
-                        scr_printf("Mounted share: %s\n", url->share);
+                        scr_printf("Mounted share: \\\\%s\\%s as %s\n",
+                                   url->server, url->share, smb2_share->name);
                         smb2_destroy_url(url);
                         
-                        if (smb2_shares == NULL) {
-                                smb2_shares = smb2_share;
-                        } else {
-                                smb2_share->next = smb2_shares;
-                                smb2_shares = smb2_share;
-                                smb2_share = NULL;
-                        }
+                        smb2_share->next = smb2_shares;
+                        smb2_shares = smb2_share;
+                        smb2_share = NULL;
                 }
         }
 	free(RAM_p);
