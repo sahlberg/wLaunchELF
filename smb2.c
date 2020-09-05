@@ -18,6 +18,10 @@
 
 #include <smb2/libsmb2.h>
 
+struct smb2fh *lf = NULL;
+#define DBG(message) \
+        smb2_write(smb2_shares->smb2, lf, message, strlen(message));
+        
 struct smb2_share *smb2_shares = NULL;
 
 static void EthStatusCheckCb(s32 alarm_id, u16 time, void *common)
@@ -178,6 +182,25 @@ static void set_time(sceMcStDateTime *ps2time, u64 smb2time)
         ps2time->Year  = tm->tm_year + 1900;
 }
 
+static void find_share(const char *path, char **name, char **p,
+                       struct smb2_share **share)
+{
+        *name = strdup(&path[6]);
+        if (*name == NULL) {
+                return;
+        }
+        *p = strchr(*name, '/');
+        if (*p == NULL) {
+                return;
+        }
+        *((*p)++) = 0;
+
+	*share = smb2_find_share(*name);
+        if (*share == NULL) {
+                return;
+        }
+}
+
 int readSMB2(const char *path, FILEINFO *info, int max)
 {
         int n = 0;
@@ -185,6 +208,11 @@ int readSMB2(const char *path, FILEINFO *info, int max)
         struct smb2_share *share = NULL;
         char *name = NULL, *p;
         struct smb2dirent *ent;
+
+        if (lf == NULL) {
+                lf = smb2_open(smb2_shares->smb2, "LOG.txt", O_CREAT|O_WRONLY);
+                DBG("Log started\n");
+        }
 
         /* Root of smb2: is a list of all the named shares */
         if (path[6] == '\0') {
@@ -206,24 +234,14 @@ int readSMB2(const char *path, FILEINFO *info, int max)
         }
 
         /* Find the share */
-        name = strdup(&path[6]);
-        if (name == NULL) {
-                goto finished;
-        }
-        p = strchr(name, '/');
-        if (p == NULL) {
-                goto finished;
-        }
-        *p++ = 0;
-	share = smb2_find_share(name);
+        find_share(path, &name, &p, &share);
         if (share == NULL) {
                 goto finished;
         }
 
-
 	dir = smb2_opendir(share->smb2, p);
 	if (dir == NULL) {
-                return 0;
+                goto finished;
         }
         while ((ent = smb2_readdir(share->smb2, dir))) {
                 if (!strcmp(ent->name, ".") || !strcmp(ent->name, "..")) {
@@ -264,6 +282,33 @@ int readSMB2(const char *path, FILEINFO *info, int max)
         }
         return n;
 }
+
+int SMB2mkdir(const char *path, int fileMode)
+{
+        struct smb2_share *share = NULL;
+        char *name = NULL, *p = NULL;
+        int rc = 0;
+
+        if (path[6] == '\0') {
+                return -EINVAL;
+        }
+
+        find_share(path, &name, &p, &share);
+        if (share == NULL) {
+                free(name);
+                return -EINVAL;
+        }
+
+        rc = smb2_mkdir(share->smb2, p);
+        if (rc) {
+                goto finished;
+        }
+
+finished:
+        free(name);
+        return rc;
+}
+
 //---------------------------------------------------------------------------
 //End of file: smb2.c
 //---------------------------------------------------------------------------

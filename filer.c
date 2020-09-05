@@ -1690,7 +1690,12 @@ int newdir(const char *path, const char *name)
 	char party[MAX_NAME], dir[MAX_PATH];
 	int ret = 0;
 
-	if (!strncmp(path, "hdd", 3)) {
+	if (!strncmp(path, "smb2", 4)) {
+		strcpy(dir, path);
+		strcat(dir, name);
+		genLimObjName(dir, 0);
+		ret = SMB2mkdir(dir, fileMode);
+	} else if (!strncmp(path, "hdd", 3)) {
 		getHddParty(path, NULL, party, dir);
 		ret = mountParty(party);
 		if (ret < 0)
