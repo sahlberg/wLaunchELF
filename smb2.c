@@ -406,6 +406,28 @@ int SMB2lseek(struct SMB2FH *fh, int where, int how)
         return smb2_lseek(fh->smb2, fh->fh, where, how, NULL);
 }
 
+int SMB2rename(const char *path, const char *newpath)
+{
+        struct smb2_share *share = NULL;
+        char *name = NULL, *p = NULL;
+        int ret;
+
+        if (path[6] == '\0') {
+                return -EINVAL;
+        }
+
+        find_share(path, &name, &p, &share);
+        if (share == NULL) {
+                free(name);
+                return -ENOENT;
+        }
+
+        ret = smb2_rename(share->smb2, p, newpath);
+        free(name);
+
+        return ret;
+}
+
 //---------------------------------------------------------------------------
 //End of file: smb2.c
 //---------------------------------------------------------------------------

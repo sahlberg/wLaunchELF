@@ -18,6 +18,8 @@ int readSMB2(const char *path, FILEINFO *info, int max);
 int SMB2mkdir(const char *dir, int fileMode);
 int SMB2rmdir(const char *dir);
 int SMB2unlink(const char *dir);
+int SMB2rename(const char *path, const char *newpath);
+
 struct SMB2FH {
         struct smb2_context *smb2;
         struct smb2fh *fh;
