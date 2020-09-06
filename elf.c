@@ -56,7 +56,8 @@ int checkELFheader(char *path)
 	elf_header_t elf_head;
 	u8 *boot_elf = (u8 *)&elf_head;
 	elf_header_t *eh = (elf_header_t *)boot_elf;
-	int fd, size = 0, ret;
+	int size = 0, ret;
+	struct vfs_fh *fh = NULL;
 	char fullpath[MAX_PATH], tmp[MAX_PATH], *p;
 
 	strcpy(fullpath, path);
@@ -82,16 +83,16 @@ int checkELFheader(char *path)
 	} else {
 		return 0;  //return 0 for unrecognized device
 	}
-	if ((fd = genOpen(fullpath, O_RDONLY)) < 0)
+	if ((fh = vfsOpen(fullpath, O_RDONLY)) == NULL)
 		goto error;
-	size = genLseek(fd, 0, SEEK_END);
+	size = vfsLseek(fh, 0, SEEK_END);
 	if (!size) {
-		genClose(fd);
+		vfsClose(fh);
 		goto error;
 	}
-	genLseek(fd, 0, SEEK_SET);
-	genRead(fd, boot_elf, sizeof(elf_header_t));
-	genClose(fd);
+	vfsLseek(fh, 0, SEEK_SET);
+	vfsRead(fh, boot_elf, sizeof(elf_header_t));
+	vfsClose(fh);
 
 	if ((_lw((u32)&eh->ident) != ELF_MAGIC) || eh->type != 2)
 		goto error;
