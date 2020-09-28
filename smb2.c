@@ -88,6 +88,10 @@ static int loadSMB2CNF(char *path)
                         struct smb2_context *smb2;
                         struct smb2_url *url;
 
+                        if (smb2_find_share(smb2_share->name)) {
+                                free(smb2_share);
+                                smb2_share = NULL;
+                        }
                         smb2_share->url = strdup(value);
                         smb2_share->smb2 = smb2 = smb2_init_context();
                         smb2_set_user(smb2, smb2_share->user);
@@ -143,6 +147,7 @@ int init_smb2(const char *ip, const char *netmask, const char *gw)
 	scr_printf("Network Initialized\n");
         
         loadSMB2CNF("mc0:/SYS-CONF/SMB2.CNF");
+        loadSMB2CNF("mass:/SYS-CONF/SMB2.CNF");
 	scr_printf("init_smb2.\n");
 
         return 0;
