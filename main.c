@@ -1491,6 +1491,9 @@ static void CleanUp(void)
 	//    padEnd();  //Required when a newer libpad library is used.
 	if (ps2kbd_opened)
 		PS2KbdClose();
+	deinit_smb2();
+	ps2ipDeinit();
+	NetManDeinit();
 }
 //------------------------------
 //endfunc CleanUp

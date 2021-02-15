@@ -58,12 +58,16 @@ static void free_smb2_share(struct smb2_share *smb2_share)
         if (smb2_share == NULL) {
                 return;
         }
+        if (smb2_share->smb2) {
+                smb2_disconnect_share(smb2_share->smb2);
+                smb2_destroy_context(smb2_share->smb2);
+        }
         free(smb2_share->name);
         free(smb2_share->user);
         free(smb2_share->password);
         free(smb2_share);
 }
-                            
+
 static int loadSMB2CNF(char *path)
 {
 	unsigned char *RAM_p;
@@ -119,6 +123,17 @@ static int loadSMB2CNF(char *path)
         }
 	free(RAM_p);
 	return 0;
+}
+
+void deinit_smb2(void)
+{
+        struct smb2_share *smb2_share;
+
+        while (smb2_shares) {
+                smb2_share = smb2_shares->next;
+                free_smb2_share(smb2_shares);
+                smb2_shares = smb2_share;
+        }
 }
 
 int init_smb2(const char *ip, const char *netmask, const char *gw)
