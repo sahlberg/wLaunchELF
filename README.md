@@ -13,6 +13,7 @@ in ps2dev.
 
 You can specify SMB2 servers and shares in either of the files:
   mc0:/SYS-CONF/SMB2.CNF or
+  mc1:/SYS-CONF/SMB2.CNF or
   mass:/SYS-CONF/SMB2.CNF
 
 The format of this file is :

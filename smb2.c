@@ -73,9 +73,10 @@ static int loadSMB2CNF(char *path)
 	unsigned char *RAM_p;
         char *CNF_p, *name, *value;
         struct smb2_share *smb2_share = NULL;
+        int entries = 0;
 
 	if (!(RAM_p = preloadCNF(path)))
-		return -1;
+		return entries;
 	CNF_p = RAM_p;
 	while (get_CNF_string(&CNF_p, &name, &value)) {
                 if (smb2_share == NULL) {
@@ -119,10 +120,11 @@ static int loadSMB2CNF(char *path)
                         smb2_share->next = smb2_shares;
                         smb2_shares = smb2_share;
                         smb2_share = NULL;
+                        entries++;
                 }
         }
 	free(RAM_p);
-	return 0;
+	return entries;
 }
 
 void deinit_smb2(void)
@@ -140,6 +142,7 @@ int init_smb2(const char *ip, const char *netmask, const char *gw)
 {
 	struct ip4_addr IP, NM, GW;
         int ip4[4];
+        int rc;
 
 	init_scr();
 	{int ii; for (ii=0;ii<2;ii++)scr_printf("Woff\n");}
@@ -161,8 +164,13 @@ int init_smb2(const char *ip, const char *netmask, const char *gw)
 	}
 	scr_printf("Network Initialized\n");
         
-        loadSMB2CNF("mc0:/SYS-CONF/SMB2.CNF");
-        loadSMB2CNF("mass:/SYS-CONF/SMB2.CNF");
+        rc = loadSMB2CNF("mc0:/SYS-CONF/SMB2.CNF");
+        if (!rc) {
+                rc = loadSMB2CNF("mc1:/SYS-CONF/SMB2.CNF");
+        }
+        if (!rc) {
+                rc = loadSMB2CNF("mass:/SYS-CONF/SMB2.CNF");
+        }
 	scr_printf("init_smb2.\n");
 
         return 0;
