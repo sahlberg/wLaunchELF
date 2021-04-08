@@ -3696,7 +3696,15 @@ int getFilePath(char *out, int cnfmode)
 						iconbase = ICON_FILE;
 						if (genCmpFileExt(files[top + i].name, "ELF"))
 							iconcolr = COLOR_GRAPH2;
-						else if (genCmpFileExt(files[top + i].name, "TXT") || genCmpFileExt(files[top + i].name, "JPG") || genCmpFileExt(files[top + i].name, "JPEG"))
+						else if (
+							genCmpFileExt(files[top + i].name, "TXT") ||
+							genCmpFileExt(files[top + i].name, "INI") ||
+						    	genCmpFileExt(files[top + i].name, "CFG") ||
+							genCmpFileExt(files[top + i].name, "CHT") ||
+							genCmpFileExt(files[top + i].name, "CNF") ||
+							genCmpFileExt(files[top + i].name, "JPG") ||
+							genCmpFileExt(files[top + i].name, "JPEG")
+							)
 							iconcolr = COLOR_GRAPH4;
 						else
 							iconcolr = COLOR_GRAPH3;
